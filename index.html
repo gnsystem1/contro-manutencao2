@@ -940,43 +940,43 @@
       document.getElementById("splash").classList.add("hide");
     }, 1800);
 
-    async function login() {
-      const user = document.getElementById("loginUser").value.trim();
-      const pass = document.getElementById("loginPass").value.trim();
+   async function login() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
 
-      if (!user || !pass) {
-        toast("Preencha usuário e senha");
-        return;
-      }
+  if (!user || !pass) {
+    toast("Preencha usuário e senha");
+    return;
+  }
 
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify({
-            action: "login",
-            usuario: user,
-            senha: pass
-          })
-        });
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "login",
+        usuario: user,
+        senha: pass
+      })
+    });
 
-        const json = await res.json();
+    const json = await res.json();
 
-        if (!json.ok) {
-          throw new Error(json.error || "Login inválido");
-        }
-
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
-        toast("Login realizado com sucesso");
-        recarregarSistema();
-
-      } catch (err) {
-        toast(err.message || "Erro no login");
-      }
+    if (!json.ok) {
+      throw new Error(json.error || "Login inválido");
     }
+
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    toast("Login realizado com sucesso");
+    recarregarSistema();
+
+  } catch (err) {
+    toast(err.message || "Erro no login");
+  }
+}  
 
     function logout() {
       document.getElementById("app").classList.add("hidden");
