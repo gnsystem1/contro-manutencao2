@@ -945,20 +945,44 @@
       document.getElementById("splash").classList.add("hide");
     }, 1800);
 
-    function login() {
-      const user = document.getElementById("loginUser").value.trim();
-      const pass = document.getElementById("loginPass").value.trim();
+   async function login() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
 
-      if (user === "admin" && pass === "1234") {
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
-        toast("Acesso liberado");
-        recarregarSistema();
-      } else {
-        toast("Login inválido");
-      }
+  if (!user || !pass) {
+    toast("Preencha usuário e senha");
+    return;
+  }
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "login",
+        usuario: user,
+        senha: pass
+      })
+    });
+
+    const json = await res.json();
+
+    if (!json.ok) {
+      throw new Error("Login inválido");
     }
 
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+
+    toast("Login realizado com sucesso");
+    recarregarSistema();
+
+  } catch (err) {
+    toast("Erro no login");
+  }
+}
     function logout() {
       document.getElementById("app").classList.add("hidden");
       document.getElementById("loginScreen").classList.remove("hidden");
