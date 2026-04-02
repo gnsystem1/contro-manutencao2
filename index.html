@@ -522,7 +522,8 @@
       padding: 14px;
       font-size: 14px;
       color: #334155;
-      line-height: 1.55;
+      line-height: 1.6;
+      word-break: break-word;
     }
 
     .result-box a {
@@ -832,7 +833,7 @@
           </div>
 
           <div class="helper">
-            Ao salvar, o sistema gera o código automaticamente na planilha.
+            Ao salvar, o sistema gera o código, o link do Forms e o QR Code automaticamente.
           </div>
 
           <div style="margin-top: 14px;">
@@ -935,7 +936,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxLmWxsMXQzAuyosQvS_-rWmVv9qjM5REB1tds-3x0BSZwJ5rS_IE79RyiEnoacvCtc/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwvToGFAVrdsUmahjU5nW9K_da2aMFrHNzT3RmJFUi6jI8ina4T9oyqzbQVwWZiLVq1/exec";
 
     let sistema = null;
     let currentScreen = "dashboard";
@@ -1315,13 +1316,14 @@
         if (!json.ok) throw new Error(json.error || "Erro ao salvar equipamento.");
 
         box.innerHTML =
-          "Equipamento salvo com sucesso.<br><strong>Código gerado:</strong> " +
-          esc(json.data?.codigo || "-");
+          "Equipamento salvo com sucesso.<br>" +
+          "<strong>Código gerado:</strong> " + esc(json.data?.codigo || "-") + "<br>" +
+          '<strong>Link do Forms:</strong> <a href="' + esc(json.data?.linkForms || "#") + '" target="_blank">Abrir</a><br>' +
+          '<strong>QR Code:</strong> <a href="' + esc(json.data?.qrCode || "#") + '" target="_blank">Abrir</a>';
 
         limparFormularioEquipamento();
         toast("Equipamento cadastrado com sucesso");
         await recarregarSistema();
-        goTo("equipamentos");
       } catch (err) {
         box.innerHTML = "Erro ao salvar: " + esc(extrairErro(err));
         toast("Falha ao salvar equipamento");
@@ -1337,8 +1339,6 @@
       document.getElementById("eqEndereco").value = "";
       document.getElementById("eqProximaManutencaoBase").value = "";
       document.getElementById("eqStatus").value = "ATIVO";
-      document.getElementById("resultadoCadastroEquipamento").classList.add("hidden");
-      document.getElementById("resultadoCadastroEquipamento").innerHTML = "";
       setRecorrencia("NAO");
     }
 
