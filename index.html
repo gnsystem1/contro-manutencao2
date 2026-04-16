@@ -920,6 +920,12 @@
       </button>
     </div>
 
+    <div style="margin-top: 12px;">
+      <button class="btn btn-primary" onclick="baixarPDF()">
+        Baixar relatório em PDF
+      </button>
+    </div>
+
     <div class="helper">
       Você pode selecionar qualquer intervalo de datas. Se deixar como padrão, o sistema usa os últimos 30 dias.
     </div>
@@ -1282,6 +1288,112 @@ function montarRelatorioPeriodo(relatorio) {
 
   html += '</div>';
   return html;
+}
+
+
+function baixarPDF() {
+  const area = document.getElementById("relatorioBox");
+  const dataInicial = document.getElementById("relatorioDataInicial")?.value || "";
+  const dataFinal = document.getElementById("relatorioDataFinal")?.value || "";
+
+  if (!area || !area.innerHTML || area.innerHTML.includes("Selecione um período")) {
+    toast("Gere o relatório antes de baixar");
+    return;
+  }
+
+  const janela = window.open("", "_blank", "width=900,height=700");
+
+  if (!janela) {
+    toast("Permita pop-up para baixar o PDF");
+    return;
+  }
+
+  janela.document.write(`
+    <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório de Manutenção</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 24px;
+            color: #0f172a;
+          }
+          h1 {
+            margin: 0 0 6px;
+            font-size: 24px;
+          }
+          .sub {
+            margin-bottom: 24px;
+            color: #475569;
+            font-size: 14px;
+          }
+          .item-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+          }
+          .item-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+          }
+          .item-title {
+            font-size: 16px;
+            font-weight: bold;
+          }
+          .item-code {
+            font-size: 12px;
+            color: #475569;
+            margin-top: 4px;
+          }
+          .item-grid {
+            display: grid;
+            gap: 6px;
+            margin-top: 8px;
+          }
+          .meta {
+            font-size: 13px;
+            line-height: 1.45;
+          }
+          .badge {
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+          }
+          .list-stack {
+            display: block;
+          }
+          .empty-box {
+            color: #64748b;
+            padding: 12px 0;
+          }
+          @media print {
+            body {
+              padding: 12px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Relatório de Manutenção</h1>
+        <div class="sub">Período: ${dataInicial || "-"} até ${dataFinal || "-"}</div>
+        ${area.innerHTML}
+      </body>
+    </html>
+  `);
+
+  janela.document.close();
+  janela.focus();
+  setTimeout(() => {
+    janela.print();
+  }, 500);
 }
 
     function montarListaCards(dados, tipo) {
