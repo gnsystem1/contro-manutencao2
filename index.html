@@ -887,17 +887,49 @@
         </div>
       </section>
 
-      <section id="screen-relatorio" class="screen">
-        <div class="page-head">
-          <h2>Relatório</h2>
-          <p>Resumo de 30 dias do sistema.</p>
-        </div>
+<section id="screen-relatorio" class="screen">
+  <div class="page-head">
+    <h2>Relatório</h2>
+    <p>Gere relatórios por período e acompanhe concluídas e reagendadas.</p>
+  </div>
 
-        <div class="panel">
-          <h3>Relatório dos últimos 30 dias</h3>
-          <div id="relatorioBox"></div>
-        </div>
-      </section>
+  <div class="panel">
+    <h3>Filtro do relatório</h3>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Data inicial</label>
+        <input class="input" id="relatorioDataInicial" type="date">
+      </div>
+
+      <div class="field">
+        <label>Data final</label>
+        <input class="input" id="relatorioDataFinal" type="date">
+      </div>
+    </div>
+
+    <div class="quick-grid" style="margin-top: 12px;">
+      <button class="quick-btn" onclick="preencherUltimos30Dias()">
+        Últimos 30 dias
+        <small>Preencher período automático</small>
+      </button>
+
+      <button class="quick-btn" onclick="gerarRelatorioPeriodo()">
+        Gerar relatório
+        <small>Buscar dados do período</small>
+      </button>
+    </div>
+
+    <div class="helper">
+      Você pode selecionar qualquer intervalo de datas. Se deixar como padrão, o sistema usa os últimos 30 dias.
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Resultado do relatório</h3>
+    <div id="relatorioBox"></div>
+  </div>
+</section>
     </main>
 
     <nav class="bottom-nav">
@@ -1138,9 +1170,119 @@
     }
 
     function renderRelatorio() {
-      const dados = sistema?.relatorio || [];
-      document.getElementById("relatorioBox").innerHTML = montarListaCards(dados, "relatorio");
-    }
+  preencherUltimos30Dias();
+  const dados = sistema?.relatorio || [];
+  if (dados && dados.length) {
+    document.getElementById("relatorioBox").innerHTML = montarListaCards(dados, "relatorio");
+  } else {
+    document.getElementById("relatorioBox").innerHTML = '<div class="empty-box">Selecione um período e toque em gerar relatório.</div>';
+  }
+}
+
+function preencherUltimos30Dias() {
+  const hoje = new Date();
+  const inicio = new Date();
+  inicio.setDate(hoje.getDate() - 30);
+
+  document.getElementById("relatorioDataInicial").value = dateToInputValue(inicio);
+  document.getElementById("relatorioDataFinal").value = dateToInputValue(hoje);
+}
+
+async function gerarRelatorioPeriodo() {
+  const dataInicial = document.getElementById("relatorioDataInicial").value;
+  const dataFinal = document.getElementById("relatorioDataFinal").value;
+
+  if (!dataInicial || !dataFinal) {
+    toast("Informe a data inicial e final");
+    return;
+  }
+
+  if (dataInicial > dataFinal) {
+    toast("A data inicial não pode ser maior");
+    return;
+  }
+
+  const box = document.getElementById("relatorioBox");
+  box.innerHTML = '<div class="empty-box">Gerando relatório...</div>';
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "getRelatorioPorPeriodo",
+        dataInicial,
+        dataFinal
+      })
+    });
+
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || "Falha ao gerar relatório.");
+
+    box.innerHTML = montarRelatorioPeriodo(json.data || {});
+  } catch (err) {
+    box.innerHTML = '<div class="empty-box">Erro ao gerar relatório.</div>';
+    toast(err.message || "Erro ao gerar relatório");
+  }
+}
+
+function montarRelatorioPeriodo(relatorio) {
+  const periodo = relatorio?.periodo || {};
+  const totais = relatorio?.totais || {};
+  const concluidas = relatorio?.concluidas || [];
+  const reagendadas = relatorio?.reagendadas || [];
+
+  let html = '<div class="list-stack">';
+
+  html += `
+    <div class="item-card">
+      <div class="item-top">
+        <div>
+          <div class="item-title">Resumo do período</div>
+          <div class="item-code">${esc(formatarValor(periodo.dataInicial) || "-")} até ${esc(formatarValor(periodo.dataFinal) || "-")}</div>
+        </div>
+        <span class="badge badge-neutral">RELATÓRIO</span>
+      </div>
+
+      <div class="item-grid">
+        <div class="meta"><strong>Total geral:</strong> ${esc(numberOrZero(totais.geral))}</div>
+        <div class="meta"><strong>Concluídas:</strong> ${esc(numberOrZero(totais.concluidas))}</div>
+        <div class="meta"><strong>Reagendadas:</strong> ${esc(numberOrZero(totais.reagendadas))}</div>
+      </div>
+    </div>
+  `;
+
+  html += `
+    <div class="item-card">
+      <div class="item-top">
+        <div>
+          <div class="item-title">Manutenções concluídas</div>
+          <div class="item-code">${esc(numberOrZero(concluidas.length))} registro(s)</div>
+        </div>
+        <span class="badge badge-success">CONCLUÍDAS</span>
+      </div>
+      ${concluidas.length ? montarListaCards(concluidas, "concluidas") : '<div class="empty-box">Nenhuma concluída neste período.</div>'}
+    </div>
+  `;
+
+  html += `
+    <div class="item-card">
+      <div class="item-top">
+        <div>
+          <div class="item-title">Manutenções reagendadas</div>
+          <div class="item-code">${esc(numberOrZero(reagendadas.length))} registro(s)</div>
+        </div>
+        <span class="badge badge-warning">REAGENDADAS</span>
+      </div>
+      ${reagendadas.length ? montarListaCards(reagendadas, "reagendadas") : '<div class="empty-box">Nenhuma reagendada neste período.</div>'}
+    </div>
+  `;
+
+  html += '</div>';
+  return html;
+}
 
     function montarListaCards(dados, tipo) {
       if (!dados || !dados.length) {
@@ -1437,6 +1579,15 @@
       if (isNaN(d.getTime())) return null;
       return d;
     }
+
+function dateToInputValue(data) {
+  const d = valueToDate(data) || new Date(data);
+  if (isNaN(d.getTime())) return "";
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return ano + "-" + mes + "-" + dia;
+}
 
     function toast(msg) {
       const el = document.getElementById("toast");
